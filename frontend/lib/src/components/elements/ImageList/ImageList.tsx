@@ -71,6 +71,8 @@ function ImageList({
     expand,
     collapse,
   } = useRequiredContext(ElementFullscreenContext)
+  const { value: evaluatedWidth, elementRef } =
+    useEvaluatedCssProperty("--st-block-width")
 
   // The width of the element is the width of the container, not necessarily the image.
   const elementWidth = width || 0
@@ -119,6 +121,7 @@ function ImageList({
       height={height}
       useContainerWidth={isFullScreen}
       topCentered
+      ref={elementRef}
     >
       <Toolbar
         target={StyledToolbarElementContainer}

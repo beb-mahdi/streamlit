@@ -156,6 +156,7 @@ function Audio({
         controls
         autoPlay={autoplay && !preventAutoplay}
         src={uri}
+        style={{ width: "100%" }}
       />
     </StyledAudioContainer>
   )
