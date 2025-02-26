@@ -37,9 +37,9 @@ const NO_OPTIONS_MSG = "No options to select."
 
 export interface Props {
   disabled: boolean
-  value: number | string | null
+  value: string | null
 
-  onChange: (value: number | null) => void
+  onChange: (value: string | null) => void
   options: any[]
   label?: string | null
   labelVisibility?: LabelVisibilityOptions
@@ -90,7 +90,7 @@ const Selectbox: React.FC<Props> = ({
   // eslint-disable-next-line no-console
   console.log("[DEBUG] props", acceptNewOptions)
   const theme: EmotionTheme = useTheme()
-  const [value, setValue] = useState<number | string | null>(propValue)
+  const [value, setValue] = useState<string | null>(propValue)
 
   const [options] = useState<string[]>(propOptions)
   // eslint-disable-next-line no-console
@@ -114,17 +114,8 @@ const Selectbox: React.FC<Props> = ({
       console.log("[DEBUG] handleChange", params)
 
       const [selected] = params.value
-
-      if (selected.isCreatable) {
-        // setOptions([...options, selected.value])
-        setValue(selected.value)
-        onChange(selected.value)
-        return
-      }
-
-      const newValue = parseInt(selected.value, 10)
-      setValue(newValue)
-      onChange(newValue)
+      setValue(selected.value)
+      onChange(selected.value)
     },
     [onChange]
   )
@@ -138,17 +129,9 @@ const Selectbox: React.FC<Props> = ({
   let selectDisabled = disabled
 
   let selectValue: Option[] = []
-
   if (!isNullOrUndefined(value)) {
     if (options.length === 0) {
       selectValue = [{ label: NO_OPTIONS_MSG, value: null }]
-    } else if (typeof value === "number") {
-      selectValue = [
-        {
-          label: options[value],
-          value: value.toString(),
-        },
-      ]
     } else {
       selectValue = [{ label: value, value: null }]
     }
@@ -160,12 +143,10 @@ const Selectbox: React.FC<Props> = ({
     selectDisabled = true
   }
 
-  const selectOptions: SelectOption[] = opts.map(
-    (option: string, index: number) => ({
-      label: option,
-      value: index.toString(),
-    })
-  )
+  const selectOptions: SelectOption[] = opts.map((option: string) => ({
+    label: option,
+    value: option,
+  }))
 
   // Check if we have more than 10 options in the selectbox.
   // If that's true, we show the keyboard on mobile. If not, we hide it.

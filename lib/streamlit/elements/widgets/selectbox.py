@@ -13,13 +13,12 @@
 # limitations under the License.
 from __future__ import annotations
 
-from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Callable, Generic, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, cast, overload
 
 from streamlit.dataframe_util import OptionSequence, convert_anything_to_list
 from streamlit.elements.lib.form_utils import current_form_id
-from streamlit.elements.lib.options_selector_utils import index_, maybe_coerce_enum
+from streamlit.elements.lib.options_selector_utils import maybe_coerce_enum
 from streamlit.elements.lib.policies import (
     check_widget_policies,
     maybe_raise_label_warnings,
@@ -54,31 +53,43 @@ if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator
 
 
-@dataclass
 class SelectboxSerde(Generic[T]):
     options: Sequence[T]
-    index: int | None
+    default_option: str | None
     accept_new_options: bool
+    options_mapping: dict[str, T]
 
-    def serialize(self, v: object) -> int | str | None:
+    def __init__(
+        self,
+        options: Sequence[T],
+        default_option: str | None,
+        accept_new_options: bool,
+    ):
+        self.options = options
+        self.default_option = default_option
+        self.accept_new_options = accept_new_options
+
+        self.options_mapping = {str(option): option for option in options}
+
+    def serialize(self, v: T | str | None) -> str | None:
         if v is None:
             return None
         if len(self.options) == 0:
-            return 0
-        return index_(self.options, v) if not self.accept_new_options else str(v)
+            return ""
+        return str(v)
 
     def deserialize(
         self,
-        ui_value: int | str | None,
+        ui_value: str | None,
         widget_id: str = "",
-    ) -> T | None:
-        # if ui_value is a string, it means the user has entered a new option
-        # and we need to add it to the list of options
-        if isinstance(ui_value, str):
-            self.options.append(ui_value)
-            return ui_value
-        idx = ui_value if ui_value is not None else self.index
-        return self.options[idx] if idx is not None and len(self.options) > 0 else None
+    ) -> T | str | None:
+        # check if the option is pointing to a complex option type T,
+        # otherwise return the option itself
+        return (
+            self.options_mapping.get(ui_value, ui_value)
+            if ui_value is not None
+            else None
+        )
 
 
 class SelectboxMixin:
@@ -98,8 +109,27 @@ class SelectboxMixin:
         placeholder: str = "Choose an option",
         disabled: bool = False,
         label_visibility: LabelVisibility = "visible",
-        accept_new_options: bool = False,
+        accept_new_options: Literal[False] = False,
     ) -> T: ...
+
+    @overload
+    def selectbox(
+        self,
+        label: str,
+        options: OptionSequence[T],
+        index: int = 0,
+        format_func: Callable[[Any], Any] = str,
+        key: Key | None = None,
+        help: str | None = None,
+        on_change: WidgetCallback | None = None,
+        args: WidgetArgs | None = None,
+        kwargs: WidgetKwargs | None = None,
+        *,  # keyword-only arguments:
+        placeholder: str = "Choose an option",
+        disabled: bool = False,
+        label_visibility: LabelVisibility = "visible",
+        accept_new_options: Literal[True] = True,
+    ) -> T | str: ...
 
     @overload
     def selectbox(
@@ -117,8 +147,27 @@ class SelectboxMixin:
         placeholder: str = "Choose an option",
         disabled: bool = False,
         label_visibility: LabelVisibility = "visible",
-        accept_new_options: bool = False,
+        accept_new_options: Literal[False] = False,
     ) -> T | None: ...
+
+    @overload
+    def selectbox(
+        self,
+        label: str,
+        options: OptionSequence[T],
+        index: None,
+        format_func: Callable[[Any], Any] = str,
+        key: Key | None = None,
+        help: str | None = None,
+        on_change: WidgetCallback | None = None,
+        args: WidgetArgs | None = None,
+        kwargs: WidgetKwargs | None = None,
+        *,  # keyword-only arguments:
+        placeholder: str = "Choose an option",
+        disabled: bool = False,
+        label_visibility: LabelVisibility = "visible",
+        accept_new_options: Literal[True] = True,
+    ) -> T | str | None: ...
 
     @gather_metrics("selectbox")
     def selectbox(
@@ -137,7 +186,7 @@ class SelectboxMixin:
         disabled: bool = False,
         label_visibility: LabelVisibility = "visible",
         accept_new_options: bool = False,
-    ) -> T | None:
+    ) -> T | str | None:
         r"""Display a select widget.
 
         Parameters
@@ -296,7 +345,7 @@ class SelectboxMixin:
         label_visibility: LabelVisibility = "visible",
         accept_new_options: bool = False,
         ctx: ScriptRunContext | None = None,
-    ) -> T | None:
+    ) -> T | str | None:
         key = to_key(key)
 
         check_widget_policies(
@@ -356,7 +405,10 @@ class SelectboxMixin:
         if help is not None:
             selectbox_proto.help = dedent(help)
 
-        serde = SelectboxSerde(opt, index, accept_new_options)
+        default_option: str | None = None
+        if index is not None:
+            default_option = str(format_func(opt[index]))
+        serde = SelectboxSerde(opt, default_option, accept_new_options)
 
         widget_state = register_widget(
             selectbox_proto.id,
@@ -373,10 +425,7 @@ class SelectboxMixin:
         if widget_state.value_changed:
             serialized_value = serde.serialize(widget_state.value)
             if serialized_value is not None:
-                if isinstance(serialized_value, int):
-                    selectbox_proto.value = serialized_value
-                elif isinstance(serialized_value, str):
-                    selectbox_proto.new_value = serialized_value
+                selectbox_proto.raw_value = serialized_value
             selectbox_proto.set_value = True
 
         if ctx:

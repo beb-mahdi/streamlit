@@ -40,21 +40,25 @@ export interface Props {
  * The value specified by the user via the UI. If the user didn't touch this
  * widget's UI, the default value is used.
  */
-type SelectboxValue = number | string | null
+type SelectboxValue = string | null
 
 const getStateFromWidgetMgr = (
   widgetMgr: WidgetStateManager,
   element: SelectboxProto
 ): SelectboxValue | undefined => {
-  return widgetMgr.getIntValue(element)
+  return widgetMgr.getStringValue(element)
 }
 
 const getDefaultStateFromProto = (element: SelectboxProto): SelectboxValue => {
-  return element.default ?? null
+  const defaultIndex = element.default
+  if (!defaultIndex) {
+    return null
+  }
+  return element.options[defaultIndex]
 }
 
 const getCurrStateFromProto = (element: SelectboxProto): SelectboxValue => {
-  return element.value ?? element.newValue ?? null
+  return element.rawValue ?? null
 }
 
 const updateWidgetMgrState = (
@@ -63,22 +67,12 @@ const updateWidgetMgrState = (
   valueWithSource: ValueWithSource<SelectboxValue>,
   fragmentId?: string
 ): void => {
-  if (element.acceptNewOptions && typeof valueWithSource.value === "string") {
-    widgetMgr.setStringValue(
-      element,
-      valueWithSource.value,
-      { fromUi: valueWithSource.fromUi },
-      fragmentId
-    )
-  } else {
-    widgetMgr.setIntValue(
-      element,
-      // @ts-expect-error
-      valueWithSource.value,
-      { fromUi: valueWithSource.fromUi },
-      fragmentId
-    )
-  }
+  widgetMgr.setStringValue(
+    element,
+    valueWithSource.value,
+    { fromUi: valueWithSource.fromUi },
+    fragmentId
+  )
 }
 
 const Selectbox: FC<Props> = ({
