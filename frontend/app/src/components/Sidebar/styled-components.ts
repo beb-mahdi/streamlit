@@ -212,6 +212,7 @@ export const StyledSidebarContent = styled.div(({}) => ({
    * @see https://github.com/streamlit/streamlit/issues/10310
    */
   scrollbarGutter: "stable both-edges",
+  scrollbarWidth: "thin",
 }))
 
 export const RESIZE_HANDLE_WIDTH = "8px"
