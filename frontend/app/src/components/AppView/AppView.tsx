@@ -33,11 +33,6 @@ import {
 import { IAppPage, Logo } from "@streamlit/protobuf"
 import ThemedSidebar from "@streamlit/app/src/components/Sidebar"
 import EventContainer from "@streamlit/app/src/components/EventContainer"
-import {
-  StyledLogo,
-  StyledLogoLink,
-  StyledSidebarOpenContainer,
-} from "@streamlit/app/src/components/Sidebar/styled-components"
 import { AppContext } from "@streamlit/app/src/components/AppContext"
 
 import {
@@ -178,35 +173,6 @@ function AppView(props: AppViewProps): ReactElement {
     removeScriptFinishedHandler,
   ])
 
-  const renderLogo = (appLogo: Logo): ReactElement => {
-    const displayImage = appLogo.iconImage ? appLogo.iconImage : appLogo.image
-    const source = endpoints.buildMediaURL(displayImage)
-
-    const logo = (
-      <StyledLogo
-        src={source}
-        size={appLogo.size}
-        alt="Logo"
-        className="stLogo"
-        data-testid="stLogo"
-      />
-    )
-
-    if (appLogo.link) {
-      return (
-        <StyledLogoLink
-          href={appLogo.link}
-          target="_blank"
-          rel="noreferrer"
-          data-testid="stLogoLink"
-        >
-          {logo}
-        </StyledLogoLink>
-      )
-    }
-    return logo
-  }
-
   // Activate scroll to bottom whenever there are bottom elements:
   const Component = hasBottomElements
     ? ScrollToBottomContainer
@@ -252,14 +218,6 @@ function AppView(props: AppViewProps): ReactElement {
             </StyledSidebarBlockContainer>
           </ThemedSidebar>
         </Profiler>
-      )}
-      {!showSidebar && appLogo && (
-        <StyledSidebarOpenContainer
-          chevronDownshift={sidebarChevronDownshift}
-          data-testid="stSidebarCollapsedControl"
-        >
-          {renderLogo(appLogo)}
-        </StyledSidebarOpenContainer>
       )}
       <Component
         tabIndex={0}

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { PureComponent, ReactNode } from "react"
+import React, { PureComponent, ReactNode, ReactElement } from "react"
 
 import moment from "moment"
 import Hotkeys from "react-hot-keys"
@@ -125,9 +125,14 @@ import { SessionEventDispatcher } from "@streamlit/app/src/SessionEventDispatche
 import { UserSettings } from "@streamlit/app/src/components/StreamlitDialog/UserSettings"
 import { MetricsManager } from "@streamlit/app/src/MetricsManager"
 import { StyledApp } from "@streamlit/app/src/styled-components"
+import {
+  StyledLogo,
+  StyledLogoLink,
+} from "@streamlit/app/src/components/Sidebar/styled-components"
 import withScreencast, {
   ScreenCastHOC,
 } from "@streamlit/app/src/hocs/withScreencast/withScreencast"
+import TopNav from "./components/TopNav/TopNav"
 
 import { showDevelopmentOptions } from "./showDevelopmentOptions"
 // Used to import fonts + responsive reboot items
@@ -169,6 +174,7 @@ interface State {
   hideColoredLine: boolean
   hideSidebarNav: boolean
   expandSidebarNav: boolean
+  navigationPosition: Navigation.Position
   appPages: IAppPage[]
   navSections: string[]
   // The hash of the current page executing
@@ -272,7 +278,7 @@ export class App extends PureComponent<Props, State> {
       },
       layout: PageConfig.Layout.CENTERED,
       initialSidebarState: PageConfig.SidebarState.AUTO,
-      menuItems: undefined,
+      menuItems: null,
       allowRunOnSave: true,
       scriptFinishedHandlers: [],
       themeHash,
@@ -308,6 +314,7 @@ export class App extends PureComponent<Props, State> {
       appConfig: {},
       autoReruns: [],
       inputsDisabled: false,
+      navigationPosition: Navigation.Position.SIDEBAR,
     }
 
     this.connectionManager = null
@@ -857,8 +864,21 @@ export class App extends PureComponent<Props, State> {
     )
   }
 
-  handleNavigation = (navigationMsg: Navigation): void => {
-    this.maybeSetState(this.appNavigation.handleNavigation(navigationMsg))
+  /**
+   * Handler for the "navigation" ForwardMsg command.
+   */
+  private handleNavigation(navigation: Navigation): void {
+    const sections = navigation.sections
+    const appPages = navigation.appPages
+    this.setState({
+      appPages: appPages,
+      navSections: sections,
+      hideSidebarNav:
+        this.state.hideSidebarNav ||
+        navigation.position === Navigation.Position.HIDDEN,
+      expandSidebarNav: navigation.expanded,
+      navigationPosition: navigation.position,
+    })
   }
 
   handlePageProfileMsg = (pageProfile: PageProfile): void => {
@@ -1872,6 +1892,38 @@ export class App extends PureComponent<Props, State> {
     }
   }
 
+  /**
+   * Renders the logo component
+   */
+  renderLogo = (appLogo: Logo): ReactElement => {
+    const displayImage = appLogo.iconImage ? appLogo.iconImage : appLogo.image
+    const source = this.endpoints.buildMediaURL(displayImage)
+
+    const logo = (
+      <StyledLogo
+        src={source}
+        size={appLogo.size}
+        alt="Logo"
+        className="stLogo"
+        data-testid="stLogo"
+      />
+    )
+
+    if (appLogo.link) {
+      return (
+        <StyledLogoLink
+          href={appLogo.link}
+          target="_blank"
+          rel="noreferrer"
+          data-testid="stLogoLink"
+        >
+          {logo}
+        </StyledLogoLink>
+      )
+    }
+    return logo
+  }
+
   render(): JSX.Element {
     const {
       allowRunOnSave,
@@ -1975,8 +2027,26 @@ export class App extends PureComponent<Props, State> {
               data-test-connection-state={connectionState}
             >
               {/* The tabindex below is required for testing. */}
-              <Header>
-                {!hideTopBar && (
+              <Header
+                navigation={
+                  this.state.navigationPosition === Navigation.Position.TOP &&
+                  appPages.length > 1 ? (
+                    <TopNav
+                      endpoints={this.endpoints}
+                      appPages={appPages}
+                      currentPageScriptHash={currentPageScriptHash}
+                      onPageChange={this.onPageChange}
+                      theme={this.props.theme.activeTheme.emotion}
+                      pageLinkBaseUrl={this.state.pageLinkBaseUrl}
+                    />
+                  ) : null
+                }
+                logoComponent={
+                  this.state.navigationPosition === Navigation.Position.TOP &&
+                  elements.logo &&
+                  this.renderLogo(elements.logo)
+                }
+                rightContent={
                   <>
                     <StatusWidget
                       connectionState={connectionState}
@@ -1993,32 +2063,30 @@ export class App extends PureComponent<Props, State> {
                       }
                       metricsMgr={this.metricsMgr}
                     />
+                    {this.showDeployButton() && (
+                      <DeployButton onClick={this.deployButtonClicked} />
+                    )}
+                    <MainMenu
+                      isServerConnected={this.isServerConnected()}
+                      quickRerunCallback={this.rerunScript}
+                      clearCacheCallback={this.openClearCacheDialog}
+                      settingsCallback={this.settingsCallback}
+                      aboutCallback={this.aboutCallback}
+                      printCallback={this.printCallback}
+                      screencastCallback={this.screencastCallback}
+                      screenCastState={this.props.screenCast.currentState}
+                      hostMenuItems={hostMenuItems}
+                      developmentMode={developmentMode}
+                      sendMessageToHost={
+                        this.hostCommunicationMgr.sendMessageToHost
+                      }
+                      menuItems={menuItems}
+                      metricsMgr={this.metricsMgr}
+                      toolbarMode={this.state.toolbarMode}
+                    />
                   </>
-                )}
-                {this.showDeployButton() && (
-                  <DeployButton
-                    onClick={this.deployButtonClicked.bind(this)}
-                  />
-                )}
-                <MainMenu
-                  isServerConnected={this.isServerConnected()}
-                  quickRerunCallback={this.rerunScript}
-                  clearCacheCallback={this.openClearCacheDialog}
-                  settingsCallback={this.settingsCallback}
-                  aboutCallback={this.aboutCallback}
-                  printCallback={this.printCallback}
-                  screencastCallback={this.screencastCallback}
-                  screenCastState={this.props.screenCast.currentState}
-                  hostMenuItems={hostMenuItems}
-                  developmentMode={developmentMode}
-                  sendMessageToHost={
-                    this.hostCommunicationMgr.sendMessageToHost
-                  }
-                  menuItems={menuItems}
-                  metricsMgr={this.metricsMgr}
-                  toolbarMode={this.state.toolbarMode}
-                />
-              </Header>
+                }
+              />
 
               <AppView
                 endpoints={this.endpoints}
@@ -2036,8 +2104,13 @@ export class App extends PureComponent<Props, State> {
                 navSections={navSections}
                 onPageChange={this.onPageChange}
                 currentPageScriptHash={currentPageScriptHash}
-                hideSidebarNav={hideSidebarNav || hostHideSidebarNav}
+                hideSidebarNav={
+                  hideSidebarNav ||
+                  hostHideSidebarNav ||
+                  this.state.navigationPosition === Navigation.Position.TOP
+                }
                 expandSidebarNav={expandSidebarNav}
+                navigationPosition={this.state.navigationPosition}
               />
               {renderedDialog}
             </StyledApp>
