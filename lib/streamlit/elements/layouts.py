@@ -44,7 +44,7 @@ class LayoutsMixin:
     def container(
         self,
         *,
-        height: int | None = None,
+        height: Literal["stretch", "content"] | int = "content",
         border: bool | None = None,
         key: Key | None = None,
         # TODO: Move this Literal definition to somewhere shared
@@ -79,11 +79,13 @@ class LayoutsMixin:
         Parameters
         ----------
 
-        height : int or None
-            Desired height of the container expressed in pixels. If ``None`` (default)
-            the container grows to fit its content. If a fixed height, scrolling is
-            enabled for large content and a grey border is shown around the container
-            to visually separate its scroll surface from the rest of the app.
+        height : "content", "stretch", int, or None
+            The height of the container. If "content" (default), the container
+            will adjust its height to fit the content. If "stretch", the container
+            will expand to fill the available vertical space. If an integer,
+            a fixed height in pixels will be used, and scrolling is enabled for
+            large content with a grey border shown around the container.
+            If None, behaves the same as "content".
 
             .. note::
                 Use containers with scroll sparingly. If you do, try to keep
@@ -213,15 +215,18 @@ class LayoutsMixin:
         block_proto.flex_container.gap = "" if gap is None else gap
         block_proto.flex_container.wrap = wrap
 
-        if height:
-            # Activate scrolling container behavior:
+        if isinstance(height, int):
+            # Activate scrolling container behavior for fixed pixel heights
             block_proto.allow_empty = True
-            block_proto.flex_container.height = height
+            block_proto.flex_container.height = str(height)
             if border is None:
                 # If border is None, we activated the
                 # border as default setting for scrolling
                 # containers.
                 block_proto.flex_container.border = True
+
+        # Convert height to string for the proto when it's "content" or "stretch"
+        block_proto.flex_container.height = str(height)
 
         if key:
             # At the moment, the ID is only used for extracting the
