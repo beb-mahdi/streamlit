@@ -1036,6 +1036,7 @@ export class App extends PureComponent<Props, State> {
       pageScriptHash: newPageScriptHash,
       mainScriptHash,
     } = newSessionProto
+    console.log(newSessionProto)
 
     if (!fragmentIdsThisRun.length) {
       // This is a normal rerun, remove all the auto reruns intervals
@@ -1194,7 +1195,7 @@ export class App extends PureComponent<Props, State> {
       }
     }
 
-    if (themeInput?.fontFaces) {
+    if (themeInput?.fontFaces || themeInput?.sidebar?.fontFaces) {
       // If font faces are provided, we need to set the imported theme with the theme
       // manager to make the font faces available.
       this.props.theme.setImportedTheme(themeInput)
