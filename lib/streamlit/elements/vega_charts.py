@@ -566,8 +566,9 @@ class VegaChartsMixin:
         x_label: str | None = None,
         y_label: str | None = None,
         color: str | Color | list[Color] | None = None,
-        width: int | None = None,
-        height: int | None = None,
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         use_container_width: bool = True,
     ) -> DeltaGenerator:
         """Display a line chart.
@@ -647,20 +648,28 @@ class VegaChartsMixin:
               as the number of y values (e.g. ``color=["#fd0", "#f0f", "#04f"]``
               for three lines).
 
-        width : int or None
-            Desired width of the chart expressed in pixels. If ``width`` is
-            ``None`` (default), Streamlit sets the width of the chart to fit
-            its contents according to the plotting library, up to the width of
-            the parent container. If ``width`` is greater than the width of the
-            parent container, Streamlit sets the chart width to match the width
-            of the parent container.
+        width : int, "stretch", or "content"
+            Width of the chart. This can be one of the following:
+
+            - An integer representing width in pixels (e.g. ``width=400``).
+            - ``"stretch"`` (default): Use the full width available in the container.
+            - ``"content"``: Auto-size the width to fit the chart content.
 
             To use ``width``, you must set ``use_container_width=False``.
 
-        height : int or None
-            Desired height of the chart expressed in pixels. If ``height`` is
-            ``None`` (default), Streamlit sets the height of the chart to fit
-            its contents according to the plotting library.
+        height : int, "stretch", or "content"
+            Height of the chart. This can be one of the following:
+
+            - An integer representing height in pixels (e.g. ``height=400``).
+            - ``"stretch"``: Use the full height available in the container.
+            - ``"content"`` (default): Auto-size the height to fit the chart content.
+
+        scale : float or int
+            Scale factor for the chart, with default value of 1. This is
+            especially useful when combined with ``width="stretch"``
+            to control how much of the available space the chart takes up.
+            Values greater than 1 make the chart larger, while values less
+            than 1 make it smaller.
 
         use_container_width : bool
             Whether to override ``width`` with the width of the parent
@@ -730,6 +739,10 @@ class VegaChartsMixin:
 
         """
 
+        # Convert "stretch" and "content" to None for generate_chart
+        width_for_chart = None if isinstance(width, str) else width
+        height_for_chart = None if isinstance(height, str) else height
+
         chart, add_rows_metadata = generate_chart(
             chart_type=ChartType.LINE,
             data=data,
@@ -739,8 +752,8 @@ class VegaChartsMixin:
             y_axis_label=y_label,
             color_from_user=color,
             size_from_user=None,
-            width=width,
-            height=height,
+            width=width_for_chart,
+            height=height_for_chart,
         )
         return cast(
             "DeltaGenerator",
@@ -748,6 +761,9 @@ class VegaChartsMixin:
                 chart,
                 use_container_width=use_container_width,
                 theme="streamlit",
+                width=width,
+                height=height,
+                scale=scale,
                 add_rows_metadata=add_rows_metadata,
             ),
         )
@@ -763,8 +779,9 @@ class VegaChartsMixin:
         y_label: str | None = None,
         color: str | Color | list[Color] | None = None,
         stack: bool | ChartStackType | None = None,
-        width: int | None = None,
-        height: int | None = None,
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         use_container_width: bool = True,
     ) -> DeltaGenerator:
         """Display an area chart.
@@ -970,6 +987,10 @@ class VegaChartsMixin:
         if stack is False or stack is None:
             stack = "layered"
 
+        # Convert "stretch" and "content" to None for generate_chart
+        width_for_chart = None if isinstance(width, str) else width
+        height_for_chart = None if isinstance(height, str) else height
+
         chart, add_rows_metadata = generate_chart(
             chart_type=ChartType.AREA,
             data=data,
@@ -979,8 +1000,8 @@ class VegaChartsMixin:
             y_axis_label=y_label,
             color_from_user=color,
             size_from_user=None,
-            width=width,
-            height=height,
+            width=width_for_chart,
+            height=height_for_chart,
             stack=stack,
         )
         return cast(
@@ -989,6 +1010,9 @@ class VegaChartsMixin:
                 chart,
                 use_container_width=use_container_width,
                 theme="streamlit",
+                width=width,
+                height=height,
+                scale=scale,
                 add_rows_metadata=add_rows_metadata,
             ),
         )
@@ -1005,8 +1029,9 @@ class VegaChartsMixin:
         color: str | Color | list[Color] | None = None,
         horizontal: bool = False,
         stack: bool | ChartStackType | None = None,
-        width: int | None = None,
-        height: int | None = None,
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         use_container_width: bool = True,
     ) -> DeltaGenerator:
         """Display a bar chart.
@@ -1236,6 +1261,10 @@ class VegaChartsMixin:
             ChartType.HORIZONTAL_BAR if horizontal else ChartType.VERTICAL_BAR
         )
 
+        # Convert "stretch" and "content" to None for generate_chart
+        width_for_chart = None if isinstance(width, str) else width
+        height_for_chart = None if isinstance(height, str) else height
+
         chart, add_rows_metadata = generate_chart(
             chart_type=bar_chart_type,
             data=data,
@@ -1245,8 +1274,8 @@ class VegaChartsMixin:
             y_axis_label=y_label,
             color_from_user=color,
             size_from_user=None,
-            width=width,
-            height=height,
+            width=width_for_chart,
+            height=height_for_chart,
             stack=stack,
         )
         return cast(
@@ -1255,6 +1284,9 @@ class VegaChartsMixin:
                 chart,
                 use_container_width=use_container_width,
                 theme="streamlit",
+                width=width,
+                height=height,
+                scale=scale,
                 add_rows_metadata=add_rows_metadata,
             ),
         )
@@ -1270,8 +1302,9 @@ class VegaChartsMixin:
         y_label: str | None = None,
         color: str | Color | list[Color] | None = None,
         size: str | float | int | None = None,
-        width: int | None = None,
-        height: int | None = None,
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         use_container_width: bool = True,
     ) -> DeltaGenerator:
         """Display a scatterplot chart.
@@ -1447,6 +1480,10 @@ class VegaChartsMixin:
 
         """
 
+        # Convert "stretch" and "content" to None for generate_chart
+        width_for_chart = None if isinstance(width, str) else width
+        height_for_chart = None if isinstance(height, str) else height
+
         chart, add_rows_metadata = generate_chart(
             chart_type=ChartType.SCATTER,
             data=data,
@@ -1456,8 +1493,8 @@ class VegaChartsMixin:
             y_axis_label=y_label,
             color_from_user=color,
             size_from_user=size,
-            width=width,
-            height=height,
+            width=width_for_chart,
+            height=height_for_chart,
         )
         return cast(
             "DeltaGenerator",
@@ -1465,6 +1502,9 @@ class VegaChartsMixin:
                 chart,
                 use_container_width=use_container_width,
                 theme="streamlit",
+                width=width,
+                height=height,
+                scale=scale,
                 add_rows_metadata=add_rows_metadata,
             ),
         )
@@ -1477,6 +1517,9 @@ class VegaChartsMixin:
         *,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["ignore"],  # No default value here to make it work with mypy
         selection_mode: str | Iterable[str] | None = None,
@@ -1490,6 +1533,9 @@ class VegaChartsMixin:
         *,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["rerun"] | WidgetCallback = "rerun",
         selection_mode: str | Iterable[str] | None = None,
@@ -1502,6 +1548,9 @@ class VegaChartsMixin:
         *,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["rerun", "ignore"] | WidgetCallback = "ignore",
         selection_mode: str | Iterable[str] | None = None,
@@ -1622,6 +1671,9 @@ class VegaChartsMixin:
             altair_chart=altair_chart,
             use_container_width=use_container_width,
             theme=theme,
+            width=width,
+            height=height,
+            scale=scale,
             key=key,
             on_select=on_select,
             selection_mode=selection_mode,
@@ -1636,6 +1688,9 @@ class VegaChartsMixin:
         *,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["ignore"],  # No default value here to make it work with mypy
         selection_mode: str | Iterable[str] | None = None,
@@ -1651,6 +1706,9 @@ class VegaChartsMixin:
         *,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["rerun"] | WidgetCallback = "rerun",
         selection_mode: str | Iterable[str] | None = None,
@@ -1665,6 +1723,9 @@ class VegaChartsMixin:
         *,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["rerun", "ignore"] | WidgetCallback = "ignore",
         selection_mode: str | Iterable[str] | None = None,
@@ -1802,6 +1863,9 @@ class VegaChartsMixin:
             spec=spec,
             use_container_width=use_container_width,
             theme=theme,
+            width=width,
+            height=height,
+            scale=scale,
             key=key,
             on_select=on_select,
             selection_mode=selection_mode,
@@ -1813,6 +1877,9 @@ class VegaChartsMixin:
         altair_chart: AltairChart,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["rerun", "ignore"] | WidgetCallback = "ignore",
         selection_mode: str | Iterable[str] | None = None,
@@ -1837,6 +1904,9 @@ class VegaChartsMixin:
             spec=vega_lite_spec,
             use_container_width=use_container_width,
             theme=theme,
+            width=width,
+            height=height,
+            scale=scale,
             key=key,
             on_select=on_select,
             selection_mode=selection_mode,
@@ -1849,6 +1919,9 @@ class VegaChartsMixin:
         spec: VegaLiteSpec | None = None,
         use_container_width: bool | None = None,
         theme: Literal["streamlit"] | None = "streamlit",
+        width: int | Literal["stretch", "content"] = "stretch",
+        height: int | Literal["stretch", "content"] = "content",
+        scale: float | int = 1,
         key: Key | None = None,
         on_select: Literal["rerun", "ignore"] | WidgetCallback = "ignore",
         selection_mode: str | Iterable[str] | None = None,
@@ -1923,6 +1996,12 @@ class VegaChartsMixin:
         vega_lite_proto.spec = _stabilize_vega_json_spec(json.dumps(spec))
         vega_lite_proto.use_container_width = use_container_width
         vega_lite_proto.theme = theme or ""
+
+        # Set the width, height, and scale fields in the proto
+        # Just cast all width and height values to strings
+        vega_lite_proto.width = str(width)
+        vega_lite_proto.height = str(height)
+        vega_lite_proto.scale = float(scale)
 
         if is_selection_activated:
             # Load the stabilized spec again as a dict:
